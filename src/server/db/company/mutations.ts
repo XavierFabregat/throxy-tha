@@ -2,6 +2,7 @@ import { db } from "@/server/db";
 import { companies, type Company, type NewCompany } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { findByDomain, findByName } from "./queries";
+import type { EnrichmentResult } from "@/lib/types";
 
 export async function createCompany(company: NewCompany): Promise<Company> {
   const [created] = await db.insert(companies).values(company).returning();
@@ -48,4 +49,25 @@ export async function upsertCompany(
     const created = await createCompany(company);
     return { company: created, wasUpdated: false };
   }
+}
+
+export async function updateCompanyEnrichment(
+  companyId: string,
+  enrichmentData: object,
+): Promise<Company> {
+  const [updated] = await db
+    .update(companies)
+    .set({
+      enrichment_data: enrichmentData as EnrichmentResult,
+      enriched_at: new Date(),
+      updated_at: new Date(),
+    })
+    .where(eq(companies.id, companyId))
+    .returning();
+
+  if (!updated) {
+    throw new Error(`Company with id ${companyId} not found`);
+  }
+
+  return updated;
 }

@@ -11,6 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import EnrichDialog from "./_components/enrich-dialog";
+import { Dialog, DialogTrigger } from "../components/ui/dialog";
 
 interface CompaniesResponse {
   companies: Company[];
@@ -31,6 +33,9 @@ export default function HomePage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [enrichingCompanies, setEnrichingCompanies] = useState<Set<string>>(
+    new Set(),
+  );
   const [name, setName] = useState("");
   const [filters, setFilters] = useState({
     country: "",
@@ -103,161 +108,221 @@ export default function HomePage() {
     }
   };
 
+  const handleEnrich = async (companyId: string) => {
+    setEnrichingCompanies((prev) => new Set(prev).add(companyId));
+    try {
+      const response = await fetch(`/api/companies/${companyId}/enrich`, {
+        method: "POST",
+      });
+
+      const result = (await response.json()) as {
+        enrichment?: { confidence_score: number };
+        error?: string;
+      };
+
+      if (response.ok && result.enrichment) {
+        alert(
+          `Enrichment completed with ${result.enrichment.confidence_score}% confidence!`,
+        );
+        void fetchCompanies(); // Refresh the data
+      } else {
+        alert(`Enrichment failed: ${result.error ?? "Unknown error"}`);
+      }
+    } catch (error) {
+      alert("Enrichment failed");
+      console.error("Enrichment failed:", error);
+    } finally {
+      setEnrichingCompanies((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(companyId);
+        return newSet;
+      });
+    }
+  };
+
   return (
-    <div style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto" }}>
-      <h1>Company Data Platform</h1>
+    <>
+      <div style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto" }}>
+        <h1>Company Data Platform</h1>
 
-      {/* Upload Section */}
-      <div
-        style={{
-          marginBottom: "30px",
-          padding: "20px",
-          border: "1px solid #ccc",
-        }}
-      >
-        <h2>Upload CSV</h2>
-        <input
-          type="file"
-          accept=".csv"
-          onChange={handleUpload}
-          disabled={uploadLoading}
-        />
-        {uploadLoading && <p>Processing...</p>}
-      </div>
-
-      {/* Filters */}
-      <div
-        style={{
-          marginBottom: "30px",
-          padding: "20px",
-          border: "1px solid #ccc",
-        }}
-      >
-        <h2>Filters</h2>
+        {/* Upload Section */}
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "15px",
+            marginBottom: "30px",
+            padding: "20px",
+            border: "1px solid #ccc",
           }}
         >
-          <div>
-            <label>Name:</label>
-            <input
-              type="text"
-              placeholder="Enter name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              style={{ width: "100%", padding: "5px", marginTop: "5px" }}
-            />
-          </div>
-          <div>
-            <label>Country:</label>
-            <input
-              type="text"
-              placeholder="Enter country"
-              value={filters.country}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, country: e.target.value }))
-              }
-              style={{ width: "100%", padding: "5px", marginTop: "5px" }}
-            />
-          </div>
+          <h2>Upload CSV</h2>
+          <input
+            type="file"
+            accept=".csv"
+            onChange={handleUpload}
+            disabled={uploadLoading}
+          />
+          {uploadLoading && <p>Processing...</p>}
+        </div>
 
-          <div>
-            <label>Employee Size:</label>
-            <select
-              value={filters.employee_size}
-              onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  employee_size: e.target.value,
-                }))
-              }
-              style={{ width: "100%", padding: "5px", marginTop: "5px" }}
-            >
-              <option value="">All Sizes</option>
-              {EMPLOYEE_SIZE_BUCKETS.map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* Filters */}
+        <div
+          style={{
+            marginBottom: "30px",
+            padding: "20px",
+            border: "1px solid #ccc",
+          }}
+        >
+          <h2>Filters</h2>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: "15px",
+            }}
+          >
+            <div>
+              <label>Name:</label>
+              <input
+                type="text"
+                placeholder="Enter name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                style={{ width: "100%", padding: "5px", marginTop: "5px" }}
+              />
+            </div>
+            <div>
+              <label>Country:</label>
+              <input
+                type="text"
+                placeholder="Enter country"
+                value={filters.country}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, country: e.target.value }))
+                }
+                style={{ width: "100%", padding: "5px", marginTop: "5px" }}
+              />
+            </div>
 
-          <div>
-            <label>Domain:</label>
-            <input
-              type="text"
-              placeholder="Enter domain"
-              value={filters.domain}
-              onChange={(e) =>
-                setFilters((prev) => ({ ...prev, domain: e.target.value }))
-              }
-              style={{ width: "100%", padding: "5px", marginTop: "5px" }}
-            />
+            <div>
+              <label>Employee Size:</label>
+              <select
+                value={filters.employee_size}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    employee_size: e.target.value,
+                  }))
+                }
+                style={{ width: "100%", padding: "5px", marginTop: "5px" }}
+              >
+                <option value="">All Sizes</option>
+                {EMPLOYEE_SIZE_BUCKETS.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label>Domain:</label>
+              <input
+                type="text"
+                placeholder="Enter domain"
+                value={filters.domain}
+                onChange={(e) =>
+                  setFilters((prev) => ({ ...prev, domain: e.target.value }))
+                }
+                style={{ width: "100%", padding: "5px", marginTop: "5px" }}
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Results */}
-      <div>
-        <h2>Companies ({total} total)</h2>
+        {/* Results */}
+        <div>
+          <h2>Companies ({total} total)</h2>
 
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>#</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Domain</TableHead>
-                <TableHead>Country</TableHead>
-                <TableHead>Employee Size</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCompanies.length === 0 ? (
+          {loading ? (
+            <p>Loading...</p>
+          ) : (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={5} className="py-8 text-center">
-                    No companies found
-                  </TableCell>
+                  <TableHead>#</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Domain</TableHead>
+                  <TableHead>Country</TableHead>
+                  <TableHead>Employee Size</TableHead>
+                  <TableHead>Enrichment</TableHead>
                 </TableRow>
-              ) : (
-                filteredCompanies.map((company, index) => (
-                  <TableRow key={company.id}>
-                    <TableCell className="font-medium">{index + 1}</TableCell>
-                    <TableCell className="font-medium">
-                      {company.name}
-                    </TableCell>
-                    <TableCell>
-                      {company.domain ? (
-                        <a
-                          href={`https://${company.domain}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 hover:underline"
-                        >
-                          {company.domain}
-                        </a>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>{company.country}</TableCell>
-                    <TableCell>
-                      <span className="inline-flex items-center rounded bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
-                        {company.employee_size}
-                      </span>
+              </TableHeader>
+              <TableBody>
+                {filteredCompanies.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-8 text-center">
+                      No companies found
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        )}
+                ) : (
+                  filteredCompanies.map((company, index) => (
+                    <TableRow key={company.id}>
+                      <TableCell className="font-medium">{index + 1}</TableCell>
+                      <TableCell className="font-medium">
+                        {company.name}
+                      </TableCell>
+                      <TableCell>
+                        {company.domain ? (
+                          <a
+                            href={`https://${company.domain}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 hover:underline"
+                          >
+                            {company.domain}
+                          </a>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>{company.country}</TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center rounded bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
+                          {company.employee_size}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {company.enrichment_data ? (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <span className="inline-flex items-center rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+                                Enriched
+                              </span>
+                            </DialogTrigger>
+                            <EnrichDialog
+                              company={company}
+                              handleEnrich={handleEnrich}
+                            />
+                          </Dialog>
+                        ) : (
+                          <button
+                            onClick={() => handleEnrich(company.id)}
+                            disabled={enrichingCompanies.has(company.id)}
+                            className="inline-flex items-center rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 hover:bg-blue-200 disabled:opacity-50"
+                          >
+                            {enrichingCompanies.has(company.id)
+                              ? "Enriching..."
+                              : "Enrich"}
+                          </button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

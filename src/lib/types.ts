@@ -44,3 +44,28 @@ export const CompanyFiltersSchema = z.object({
 });
 
 export type CompanyFilters = z.infer<typeof CompanyFiltersSchema>;
+
+// Enrichment types
+export interface CompanySignals {
+  recent_news: string[];
+  hiring_signals: string[];
+  funding_events: string[];
+  technology_adoption: string[];
+  trigger_events: string[];
+  growth_indicators: string[];
+  leadership_changes: string[];
+}
+
+export interface NewsSearchResult {
+  title: string;
+  snippet: string;
+  url: string;
+  date?: string;
+}
+
+export interface EnrichmentResult {
+  signals: CompanySignals;
+  sources: NewsSearchResult[];
+  enriched_at: Date;
+  confidence_score: number;
+}

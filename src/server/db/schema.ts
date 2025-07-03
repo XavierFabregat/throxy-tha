@@ -3,6 +3,7 @@
 
 import { sql } from "drizzle-orm";
 import { index, pgTableCreator } from "drizzle-orm/pg-core";
+import type { EnrichmentResult } from "../../lib/types";
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -24,6 +25,8 @@ export const companies = createTable(
     country: t.varchar({ length: 100 }),
     employee_size: t.varchar({ length: 50 }).notNull(),
     raw_json: t.jsonb().notNull(), // Store original CSV data for auditability and possible duplication handling
+    enrichment_data: t.jsonb().$type<EnrichmentResult>(),
+    enriched_at: t.timestamp({ withTimezone: true }), // NOTE: to see if it makes sense to enrich the data again
     created_at: t
       .timestamp({ withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
