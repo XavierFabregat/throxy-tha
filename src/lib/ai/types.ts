@@ -36,7 +36,7 @@ export interface BatchCleaningRequest {
 
 export interface BatchCleaningResponse {
   success: boolean;
-  data?: CleanedData[];
+  data: CleanedData[];
   error?: string;
   tokensUsed?: number;
   cost?: number;
