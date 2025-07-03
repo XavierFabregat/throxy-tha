@@ -25,6 +25,7 @@ export class AIModelFactory {
           model: "gpt-4o-mini",
           temperature: 0.1,
           maxTokens: 1000,
+          apiKey: process.env.OPENAI_API_KEY,
         };
       default:
         return {};
