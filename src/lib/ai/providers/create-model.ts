@@ -1,11 +1,15 @@
 import { type AIModelInterface, type AIModelConfig } from "../types";
 import { OpenAIProvider } from "./openai";
+import { env } from "@/env";
 
 export class AIModelFactory {
   static createModel(config: AIModelConfig): AIModelInterface {
     switch (config.provider) {
       case "openai":
-        return new OpenAIProvider(config);
+        return new OpenAIProvider({
+          ...this.getDefaultConfig(config.provider),
+          ...config,
+        });
       // If we wanted to add antrhopic for example, we woldu add it here
       // case "anthropic":
       //   return new AnthropicProvider(config);
@@ -25,7 +29,7 @@ export class AIModelFactory {
           model: "gpt-4o-mini",
           temperature: 0.1,
           maxTokens: 1000,
-          apiKey: process.env.OPENAI_API_KEY,
+          apiKey: env.OPENAI_API_KEY,
         };
       default:
         return {};
