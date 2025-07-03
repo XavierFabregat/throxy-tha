@@ -2,14 +2,7 @@
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
 import { sql } from "drizzle-orm";
-import {
-  index,
-  pgTableCreator,
-  varchar,
-  text,
-  timestamp,
-  jsonb,
-} from "drizzle-orm/pg-core";
+import { index, pgTableCreator } from "drizzle-orm/pg-core";
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
