@@ -4,7 +4,7 @@ import {
   updateCompanyEnrichment,
 } from "@/server/db/company/mutations";
 import { RawCompanySchema, type RawCompanyData } from "@/lib/types";
-import type { AIModelInterface, CleaningResponse } from "@/lib/ai/types";
+import type { AIModelInterface } from "@/lib/ai/types";
 import type { UploadResult } from "./types";
 import { CompanyEnrichmentService } from "@/lib/enrichment/service";
 import type { NewsService } from "../enrichment/news/service";
@@ -310,17 +310,9 @@ export class UploadService {
     // Map various header names to our expected schema fields
     const headerMap: Record<string, string> = {
       company_name: "name",
-      company: "name",
-      name: "name",
       domain: "domain",
-      website: "domain",
-      url: "domain",
       country: "country",
-      location: "country",
       employee_size: "employee_size",
-      employees: "employee_size",
-      size: "employee_size",
-      headcount: "employee_size",
     };
 
     return headerMap[normalized] ?? normalized;

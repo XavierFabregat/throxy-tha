@@ -2,37 +2,14 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { type Company } from "@/server/db/schema";
-import { EMPLOYEE_SIZE_BUCKETS } from "@/lib/types";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import EnrichDialog from "./_components/enrich-dialog";
-import { Dialog, DialogTrigger } from "../components/ui/dialog";
-import { Button } from "../components/ui/button";
-
-interface CompaniesResponse {
-  companies: Company[];
-  total: number;
-}
-
-interface UploadResult {
-  processed: number;
-  inserted: number;
-  updated: number;
-  errors: number;
-  errorDetails: string[];
-  totalCost?: number;
-  enriched: number;
-  enrichmentErrors: number;
-  enrichmentSkipped: number;
-}
+import type { UploadResult } from "@/lib/upload/types";
+import { UploadSection } from "./_components/upload-section";
+import { CompanyFilters } from "./_components/company-filters";
+import { CompanyTable } from "./_components/company-table";
+import type { CompaniesResponse } from "../lib/types";
 
 export default function HomePage() {
+  // State management
   const [companies, setCompanies] = useState<Company[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -48,12 +25,14 @@ export default function HomePage() {
   });
   const [enableEnrichment, setEnableEnrichment] = useState(false);
 
+  // Computed values
   const filteredCompanies = useMemo(() => {
     return companies.filter((company) =>
       company.name.toLowerCase().includes(name.toLowerCase()),
     );
   }, [companies, name]);
 
+  // API functions
   const fetchCompanies = useCallback(async () => {
     setLoading(true);
     try {
@@ -76,13 +55,7 @@ export default function HomePage() {
     }
   }, [filters]);
 
-  useEffect(() => {
-    void fetchCompanies();
-  }, [filters, fetchCompanies]);
-
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("Hello");
-    console.log("🔍 Uploading file:", event);
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -134,7 +107,7 @@ export default function HomePage() {
         alert(
           `Enrichment completed with ${result.enrichment.confidence_score}% confidence!`,
         );
-        void fetchCompanies(); // Refresh the data
+        void fetchCompanies();
       } else {
         alert(`Enrichment failed: ${result.error ?? "Unknown error"}`);
       }
@@ -150,199 +123,49 @@ export default function HomePage() {
     }
   };
 
+  const handleDeleteAll = async () => {
+    try {
+      await fetch("/api/companies", { method: "DELETE" });
+      alert("All companies deleted");
+      void fetchCompanies();
+    } catch (error) {
+      alert("Failed to delete companies");
+      console.error("Delete failed:", error);
+    }
+  };
+
+  // Effects
+  useEffect(() => {
+    void fetchCompanies();
+  }, [filters, fetchCompanies]);
+
   return (
     <div className="flex h-full w-full flex-col gap-4">
       <div className="flex h-full w-full flex-col gap-4">
         <h1 className="text-2xl font-bold">Company Data Platform</h1>
-        <div className="flex w-full items-center justify-between gap-4 border-1 border-t border-b p-2">
-          <div className="flex flex-col gap-2">
-            <h2 className="text-lg font-bold">Upload CSV</h2>
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleUpload}
-              disabled={uploadLoading}
-              className="border-input w-full rounded-md border border-1 p-2"
-            />
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={enableEnrichment}
-                onChange={(e) => setEnableEnrichment(e.target.checked)}
-                disabled={uploadLoading}
-                className="rounded"
-              />
-              <span>Enrich company data during upload</span>
-            </label>
-            {uploadLoading && (
-              <p className="text-sm text-gray-600">
-                {enableEnrichment
-                  ? "Processing and enriching..."
-                  : "Processing..."}
-              </p>
-            )}
-          </div>
 
-          <Button
-            variant="destructive"
-            onClick={() => {
-              void fetch("/api/companies", {
-                method: "DELETE",
-              }).then(() => {
-                alert("All companies deleted");
-                void fetchCompanies();
-              });
-            }}
-          >
-            Delete All Companies
-          </Button>
-        </div>
+        <UploadSection
+          uploadLoading={uploadLoading}
+          enableEnrichment={enableEnrichment}
+          onEnrichmentChange={setEnableEnrichment}
+          onUpload={handleUpload}
+          onDeleteAll={handleDeleteAll}
+        />
 
-        <div className="flex flex-col gap-2 border-1 border-t border-b p-2">
-          <h2>Filters</h2>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label>Name:</label>
-              <input
-                type="text"
-                placeholder="Enter name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="border-input w-full rounded-md border border-1 p-2"
-              />
-            </div>
-            <div>
-              <label>Country:</label>
-              <input
-                type="text"
-                placeholder="Enter country"
-                value={filters.country}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, country: e.target.value }))
-                }
-                className="border-input w-full rounded-md border border-1 p-2"
-              />
-            </div>
+        <CompanyFilters
+          name={name}
+          onNameChange={setName}
+          filters={filters}
+          onFiltersChange={setFilters}
+        />
 
-            <div>
-              <label>Employee Size:</label>
-              <select
-                value={filters.employee_size}
-                onChange={(e) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    employee_size: e.target.value,
-                  }))
-                }
-                className="border-input w-full rounded-md border p-2"
-              >
-                <option value="">All Sizes</option>
-                {EMPLOYEE_SIZE_BUCKETS.map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label>Domain:</label>
-              <input
-                type="text"
-                placeholder="Enter domain"
-                value={filters.domain}
-                onChange={(e) =>
-                  setFilters((prev) => ({ ...prev, domain: e.target.value }))
-                }
-                className="border-input w-full rounded-md border border-1 p-2"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <h2>Companies ({total} total)</h2>
-
-          {loading ? (
-            <p>Loading...</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>#</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Domain</TableHead>
-                  <TableHead>Country</TableHead>
-                  <TableHead>Employee Size</TableHead>
-                  <TableHead>Enrichment</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCompanies.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="py-8 text-center">
-                      No companies found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredCompanies.map((company, index) => (
-                    <TableRow key={company.id}>
-                      <TableCell className="font-medium">{index + 1}</TableCell>
-                      <TableCell className="font-medium">
-                        {company.name}
-                      </TableCell>
-                      <TableCell>
-                        {company.domain ? (
-                          <a
-                            href={`https://${company.domain}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800 hover:underline"
-                          >
-                            {company.domain}
-                          </a>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>{company.country}</TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center rounded bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
-                          {company.employee_size}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {company.enrichment_data ? (
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <span className="inline-flex cursor-pointer items-center rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
-                                Enriched
-                              </span>
-                            </DialogTrigger>
-                            <EnrichDialog
-                              company={company}
-                              handleEnrich={handleEnrich}
-                            />
-                          </Dialog>
-                        ) : (
-                          <button
-                            onClick={() => handleEnrich(company.id)}
-                            disabled={enrichingCompanies.has(company.id)}
-                            className="inline-flex cursor-pointer items-center rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 hover:bg-blue-200 disabled:opacity-50"
-                          >
-                            {enrichingCompanies.has(company.id)
-                              ? "Enriching..."
-                              : "Enrich"}
-                          </button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </div>
+        <CompanyTable
+          companies={filteredCompanies}
+          total={total}
+          loading={loading}
+          enrichingCompanies={enrichingCompanies}
+          onEnrich={handleEnrich}
+        />
       </div>
     </div>
   );

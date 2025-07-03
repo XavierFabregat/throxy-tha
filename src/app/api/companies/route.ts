@@ -1,9 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { CompanyFiltersSchema } from "@/lib/types";
+import { CompanyFiltersSchema, type CompaniesResponse } from "@/lib/types";
 import { findWithFilters, countWithFilters } from "@/server/db/company/queries";
 import { deleteAllCompanies } from "../../../server/db/company/mutations";
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  request: NextRequest,
+): Promise<NextResponse<CompaniesResponse | { error: string }>> {
   try {
     const { searchParams } = new URL(request.url);
     const filters = CompanyFiltersSchema.parse(
@@ -22,9 +24,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       companies,
       total,
-      page: Math.floor(filters.offset / filters.limit) + 1,
-      pageSize: filters.limit,
-      totalPages: Math.ceil(total / filters.limit),
     });
   } catch (error) {
     console.error("Companies API error:", error);
