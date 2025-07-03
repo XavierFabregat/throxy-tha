@@ -27,6 +27,9 @@ interface UploadResult {
   errors: number;
   errorDetails: string[];
   totalCost?: number;
+  enriched: number;
+  enrichmentErrors: number;
+  enrichmentSkipped: number;
 }
 
 export default function HomePage() {
@@ -43,6 +46,7 @@ export default function HomePage() {
     employee_size: "",
     domain: "",
   });
+  const [enableEnrichment, setEnableEnrichment] = useState(false);
 
   const filteredCompanies = useMemo(() => {
     return companies.filter((company) =>
@@ -77,6 +81,8 @@ export default function HomePage() {
   }, [filters, fetchCompanies]);
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("Hello");
+    console.log("🔍 Uploading file:", event);
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -84,6 +90,7 @@ export default function HomePage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("enableEnrichment", enableEnrichment.toString());
 
       const response = await fetch("/api/upload", {
         method: "POST",
@@ -93,9 +100,11 @@ export default function HomePage() {
       const result = (await response.json()) as UploadResult;
 
       if (response.ok) {
-        alert(
-          `Upload completed!\nProcessed: ${result.processed}\nInserted: ${result.inserted}\nUpdated: ${result.updated}\nErrors: ${result.errors}`,
-        );
+        const message = enableEnrichment
+          ? `Upload completed!\nProcessed: ${result.processed}\nInserted: ${result.inserted}\nUpdated: ${result.updated}\nEnriched: ${result.enriched}\nEnrichment Errors: ${result.enrichmentErrors}\nErrors: ${result.errors}`
+          : `Upload completed!\nProcessed: ${result.processed}\nInserted: ${result.inserted}\nUpdated: ${result.updated}\nErrors: ${result.errors}`;
+
+        alert(message);
         void fetchCompanies();
       } else {
         alert(`Upload failed: ${result.errorDetails[0] ?? "Unknown error"}`);
@@ -155,7 +164,23 @@ export default function HomePage() {
               disabled={uploadLoading}
               className="border-input w-full rounded-md border border-1 p-2"
             />
-            {uploadLoading && <p>Processing...</p>}
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={enableEnrichment}
+                onChange={(e) => setEnableEnrichment(e.target.checked)}
+                disabled={uploadLoading}
+                className="rounded"
+              />
+              <span>Enrich company data during upload</span>
+            </label>
+            {uploadLoading && (
+              <p className="text-sm text-gray-600">
+                {enableEnrichment
+                  ? "Processing and enriching..."
+                  : "Processing..."}
+              </p>
+            )}
           </div>
 
           <Button

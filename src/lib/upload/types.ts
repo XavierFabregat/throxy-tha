@@ -5,4 +5,8 @@ export interface UploadResult {
   errors: number;
   errorDetails: string[];
   totalCost?: number;
+  // Enrichment tracking
+  enriched: number;
+  enrichmentErrors: number;
+  enrichmentSkipped: number;
 }

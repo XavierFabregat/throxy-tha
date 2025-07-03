@@ -51,6 +51,11 @@ export class CompanyEnrichmentService {
 
   private async searchCompanyNews(companyName: string): Promise<NewsArticle[]> {
     const newsResults = await this.newsService.search(companyName);
+    if (newsResults.status !== "ok") {
+      console.error("Failed to search for company news:", newsResults);
+      console.log("Using mock news data");
+      return this.getMockNewsData(companyName).articles;
+    }
     return newsResults.articles;
   }
 
@@ -181,142 +186,132 @@ If no relevant signals found for a category, use an empty array.`;
     return Math.min(score, 100);
   }
 
-  private getMockNewsData(companyName: string): NewsSearchResult[] {
+  private getMockNewsData(companyName: string): NewsSearchResult {
     // Mock data for demonstration - in production, replace with real search API
-    const mockNews: Record<string, NewsSearchResult[]> = {
-      "Apple Inc.": [
-        {
-          status: "ok",
-          totalResults: 1,
-          articles: [
-            {
-              title: "Apple Announces New AI Features for iPhone",
-              content:
-                "Apple unveiled advanced AI capabilities including improved Siri and machine learning features across its device ecosystem.",
-              url: "https://example.com/apple-ai-features",
-              publishedAt: "2024-01-15",
-              source: {
-                name: "Apple",
-              },
-              author: "John Doe",
-              description:
-                "Apple unveiled advanced AI capabilities including improved Siri and machine learning features across its device ecosystem.",
-              urlToImage: "https://example.com/apple-ai-features.jpg",
+    const mockNews: Record<string, NewsSearchResult> = {
+      "Apple Inc.": {
+        status: "ok",
+        totalResults: 1,
+        articles: [
+          {
+            title: "Apple Announces New AI Features for iPhone",
+            content:
+              "Apple unveiled advanced AI capabilities including improved Siri and machine learning features across its device ecosystem.",
+            url: "https://example.com/apple-ai-features",
+            publishedAt: "2024-01-15",
+            source: {
+              name: "Apple",
             },
-          ],
-        },
-      ],
-      Netflix: [
-        {
-          status: "ok",
-          totalResults: 1,
-          articles: [
-            {
-              title: "Netflix Invests $2B in Original Content",
-              content:
-                "Streaming giant announces major investment in original programming and new studio acquisitions.",
-              url: "https://example.com/netflix-investment",
-              publishedAt: "2024-01-20",
-              source: {
-                name: "Netflix",
-              },
-              author: "John Doe",
-              description:
-                "Streaming giant announces major investment in original programming and new studio acquisitions.",
-              urlToImage: "https://example.com/netflix-investment.jpg",
+            author: "John Doe",
+            description:
+              "Apple unveiled advanced AI capabilities including improved Siri and machine learning features across its device ecosystem.",
+            urlToImage: "https://example.com/apple-ai-features.jpg",
+          },
+        ],
+      },
+      Netflix: {
+        status: "ok",
+        totalResults: 1,
+        articles: [
+          {
+            title: "Netflix Invests $2B in Original Content",
+            content:
+              "Streaming giant announces major investment in original programming and new studio acquisitions.",
+            url: "https://example.com/netflix-investment",
+            publishedAt: "2024-01-20",
+            source: {
+              name: "Netflix",
             },
-          ],
-        },
-      ],
-      Spotify: [
-        {
-          status: "ok",
-          totalResults: 1,
-          articles: [
-            {
-              title: "Spotify Launches AI Podcast Recommendations",
-              content:
-                "New machine learning algorithms help users discover personalized podcast content.",
-              url: "https://example.com/spotify-ai",
-              publishedAt: "2024-01-18",
-              source: {
-                name: "Spotify",
-              },
-              author: "John Doe",
-              description:
-                "New machine learning algorithms help users discover personalized podcast content.",
-              urlToImage: "https://example.com/spotify-ai.jpg",
+            author: "John Doe",
+            description:
+              "Streaming giant announces major investment in original programming and new studio acquisitions.",
+            urlToImage: "https://example.com/netflix-investment.jpg",
+          },
+        ],
+      },
+      Spotify: {
+        status: "ok",
+        totalResults: 1,
+        articles: [
+          {
+            title: "Spotify Launches AI Podcast Recommendations",
+            content:
+              "New machine learning algorithms help users discover personalized podcast content.",
+            url: "https://example.com/spotify-ai",
+            publishedAt: "2024-01-18",
+            source: {
+              name: "Spotify",
             },
-          ],
-        },
-      ],
-      Tesla: [
-        {
-          status: "ok",
-          totalResults: 1,
-          articles: [
-            {
-              title: "Tesla Opens New Gigafactory in Mexico",
-              content:
-                "Electric vehicle manufacturer expands global production capacity with new facility, hiring 3,000 workers.",
-              url: "https://example.com/tesla-mexico",
-              publishedAt: "2024-01-12",
-              source: {
-                name: "Tesla",
-              },
-              author: "John Doe",
-              description:
-                "Electric vehicle manufacturer expands global production capacity with new facility, hiring 3,000 workers.",
-              urlToImage: "https://example.com/tesla-mexico.jpg",
+            author: "John Doe",
+            description:
+              "New machine learning algorithms help users discover personalized podcast content.",
+            urlToImage: "https://example.com/spotify-ai.jpg",
+          },
+        ],
+      },
+
+      Tesla: {
+        status: "ok",
+        totalResults: 1,
+        articles: [
+          {
+            title: "Tesla Opens New Gigafactory in Mexico",
+            content:
+              "Electric vehicle manufacturer expands global production capacity with new facility, hiring 3,000 workers.",
+            url: "https://example.com/tesla-mexico",
+            publishedAt: "2024-01-12",
+            source: {
+              name: "Tesla",
             },
-          ],
-        },
-      ],
-      "Microsoft Corporation": [
-        {
-          status: "ok",
-          totalResults: 1,
-          articles: [
-            {
-              title: "Microsoft Acquires AI Startup for $1.2B",
-              content:
-                "Tech giant strengthens AI capabilities with strategic acquisition, integrating new technology into Office suite.",
-              url: "https://example.com/microsoft-ai-acquisition",
-              publishedAt: "2024-01-08",
-              source: {
-                name: "Microsoft",
-              },
-              author: "John Doe",
-              description:
-                "Tech giant strengthens AI capabilities with strategic acquisition, integrating new technology into Office suite.",
-              urlToImage: "https://example.com/microsoft-ai-acquisition.jpg",
+            author: "John Doe",
+            description:
+              "Electric vehicle manufacturer expands global production capacity with new facility, hiring 3,000 workers.",
+            urlToImage: "https://example.com/tesla-mexico.jpg",
+          },
+        ],
+      },
+
+      "Microsoft Corporation": {
+        status: "ok",
+        totalResults: 1,
+        articles: [
+          {
+            title: "Microsoft Acquires AI Startup for $1.2B",
+            content:
+              "Tech giant strengthens AI capabilities with strategic acquisition, integrating new technology into Office suite.",
+            url: "https://example.com/microsoft-ai-acquisition",
+            publishedAt: "2024-01-08",
+            source: {
+              name: "Microsoft",
             },
-          ],
-        },
-      ],
+            author: "John Doe",
+            description:
+              "Tech giant strengthens AI capabilities with strategic acquisition, integrating new technology into Office suite.",
+            urlToImage: "https://example.com/microsoft-ai-acquisition.jpg",
+          },
+        ],
+      },
     };
 
     return (
-      mockNews[companyName] ?? [
-        {
-          status: "ok",
-          totalResults: 1,
-          articles: [
-            {
-              title: `${companyName} Continues Growth Strategy`,
-              content: `${companyName} focuses on market expansion and technology improvements to drive business growth.`,
-              url: `https://example.com/${companyName.toLowerCase().replace(/\s+/g, "-")}-news`,
-              publishedAt: "2024-01-12",
-              source: {
-                name: companyName,
-              },
-              author: "John Doe",
-              description: `${companyName} focuses on market expansion and technology improvements to drive business growth.`,
-              urlToImage: "https://example.com/microsoft-ai-acquisition.jpg",
+      mockNews[companyName] ?? {
+        status: "ok",
+        totalResults: 1,
+        articles: [
+          {
+            title: `${companyName} Continues Growth Strategy`,
+            content: `${companyName} focuses on market expansion and technology improvements to drive business growth.`,
+            url: `https://example.com/${companyName.toLowerCase().replace(/\s+/g, "-")}-news`,
+            publishedAt: "2024-01-12",
+            source: {
+              name: companyName,
             },
-          ],
-        },
-      ]
+            author: "John Doe",
+            description: `${companyName} focuses on market expansion and technology improvements to drive business growth.`,
+            urlToImage: "https://example.com/microsoft-ai-acquisition.jpg",
+          },
+        ],
+      }
     );
   }
 }

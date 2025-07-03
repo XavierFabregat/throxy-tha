@@ -2,11 +2,13 @@ import { type NextRequest, NextResponse } from "next/server";
 import { UploadService } from "@/lib/upload/service";
 import { AIModelFactory } from "@/lib/ai/providers/create-model";
 import type { AIModelConfig } from "@/lib/ai/types";
+import { NewsService } from "../../../lib/enrichment/news/service";
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File;
+    const enableEnrichment = formData.get("enableEnrichment") === "true";
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -34,9 +36,15 @@ export async function POST(request: NextRequest) {
     };
 
     const aiModel = AIModelFactory.createModel(modelConfig);
-    const uploadService = new UploadService(aiModel);
+    const newsService = new NewsService();
+    const uploadService = new UploadService(
+      aiModel,
+      newsService,
+      enableEnrichment,
+    );
 
-    // Process the CSV
+    console.log(`🚀 Starting CSV upload with enrichment: ${enableEnrichment}`);
+
     const csvContent = await file.text();
     const result = await uploadService.processCSV(csvContent);
 

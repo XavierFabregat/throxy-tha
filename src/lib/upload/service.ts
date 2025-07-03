@@ -1,14 +1,32 @@
 import { CompanyDataAICleaner } from "@/lib/ai/cleaning";
-import { upsertCompany } from "@/server/db/company/mutations";
+import {
+  upsertCompany,
+  updateCompanyEnrichment,
+} from "@/server/db/company/mutations";
 import { RawCompanySchema, type RawCompanyData } from "@/lib/types";
-import type { AIModelInterface } from "@/lib/ai/types";
+import type { AIModelInterface, CleaningResponse } from "@/lib/ai/types";
 import type { UploadResult } from "./types";
+import { CompanyEnrichmentService } from "@/lib/enrichment/service";
+import type { NewsService } from "../enrichment/news/service";
+import type { Company } from "../../server/db/schema";
 
 export class UploadService {
   private cleaner: CompanyDataAICleaner;
+  private enrichmentService?: CompanyEnrichmentService;
 
-  constructor(aiModel: AIModelInterface) {
+  constructor(
+    aiModel: AIModelInterface,
+    newsService: NewsService,
+    enableEnrichment = false,
+  ) {
     this.cleaner = new CompanyDataAICleaner(aiModel);
+
+    if (enableEnrichment) {
+      this.enrichmentService = new CompanyEnrichmentService(
+        aiModel,
+        newsService,
+      );
+    }
   }
 
   async processCSV(csvData: string): Promise<UploadResult> {
@@ -19,6 +37,9 @@ export class UploadService {
       errors: 0,
       errorDetails: [],
       totalCost: 0,
+      enriched: 0,
+      enrichmentErrors: 0,
+      enrichmentSkipped: 0,
     };
 
     try {
@@ -75,7 +96,12 @@ export class UploadService {
       console.log(
         `🤖 Starting AI cleaning for ${validatedRows.length} validated rows...`,
       );
-      const cleanedCompanies = await this.cleaner.cleanBatchData(validatedRows);
+      // const cleanedCompanies = await this.cleaner.cleanBatchData(validatedRows);
+      const cleanedCompanies = (
+        await Promise.all(
+          validatedRows.map((row) => this.cleaner.cleanData(row)),
+        )
+      ).filter((response) => response !== null);
 
       if (!cleanedCompanies) {
         console.error("❌ AI cleaning completely failed");
@@ -83,12 +109,17 @@ export class UploadService {
       }
 
       console.log(
-        `🧹 AI cleaning completed. Got ${cleanedCompanies.data.length} results`,
+        `🧹 AI cleaning completed. Got ${cleanedCompanies.length} results`,
       );
 
-      // we save the cleaned companies to the database
-      for (let i = 0; i < cleanedCompanies.data.length; i++) {
-        const cleaned = cleanedCompanies.data[i];
+      // PHASE 1: Save all cleaned companies to database first (to get IDs)
+      console.log(
+        `💾 Saving ${cleanedCompanies.length} companies to database...`,
+      );
+      const savedCompanies: Company[] = [];
+
+      for (let i = 0; i < cleanedCompanies.length; i++) {
+        const cleaned = cleanedCompanies[i]?.data;
 
         if (!cleaned) {
           result.errors++;
@@ -105,8 +136,7 @@ export class UploadService {
         });
 
         try {
-          // We upsert instead of insert since we don;t wnat dupliicated companies in our db, instead if we get another company in the db we want to update it
-          const { wasUpdated } = await upsertCompany(cleaned);
+          const { wasUpdated, company } = await upsertCompany(cleaned);
 
           if (wasUpdated) {
             result.updated++;
@@ -114,6 +144,11 @@ export class UploadService {
           } else {
             result.inserted++;
             console.log(`✅ Inserted new company: ${cleaned.name}`);
+          }
+
+          // Collect companies for potential enrichment
+          if (company) {
+            savedCompanies.push(company);
           }
         } catch (error) {
           result.errors++;
@@ -124,6 +159,92 @@ export class UploadService {
             `Row ${i + 1}: Database error - ${errorMsg}`,
           );
         }
+      }
+
+      // PHASE 2: Parallel enrichment of saved companies (if enabled)
+      if (this.enrichmentService && savedCompanies.length > 0) {
+        console.log(
+          `🚀 Starting parallel enrichment for ${savedCompanies.length} companies...`,
+        );
+
+        // DESIGN DECISION: Parallel enrichment for massive speed improvement
+        // Trade-off: Higher API burst costs vs 20x faster processing
+        const enrichmentPromises = savedCompanies.map(
+          async (company, index) => {
+            try {
+              console.log(
+                `🔍 Enriching ${company.name}... (${index + 1}/${savedCompanies.length})`,
+              );
+
+              const enrichmentResult =
+                await this.enrichmentService!.enrichCompany(company);
+
+              // Save enrichment results to database
+              await updateCompanyEnrichment(company.id, enrichmentResult);
+
+              return {
+                success: true,
+                company: company.name,
+                confidence: enrichmentResult.confidence_score,
+              };
+            } catch (enrichError) {
+              return {
+                success: false,
+                company: company.name,
+                error:
+                  enrichError instanceof Error
+                    ? enrichError.message
+                    : "Unknown error",
+              };
+            }
+          },
+        );
+
+        // Execute all enrichments in parallel using Promise.allSettled
+        // DESIGN DECISION: allSettled vs all - individual failures shouldn't stop the batch
+        const enrichmentResults = await Promise.allSettled(enrichmentPromises);
+
+        // Process enrichment results
+        for (const promiseResult of enrichmentResults) {
+          if (promiseResult.status === "fulfilled") {
+            const enrichResult = promiseResult.value;
+
+            if (enrichResult.success) {
+              result.enriched++;
+              console.log(
+                `✅ Enriched ${enrichResult.company} (confidence: ${enrichResult.confidence}%)`,
+              );
+            } else {
+              result.enrichmentErrors++;
+              console.warn(
+                `⚠️ Enrichment failed for ${enrichResult.company}:`,
+                enrichResult.error,
+              );
+              result.errorDetails.push(
+                `Enrichment failed for ${enrichResult.company}: ${enrichResult.error}`,
+              );
+            }
+          } else {
+            // Shouldn't happen with our error handling, but safety net
+            result.enrichmentErrors++;
+            console.error(
+              "Unexpected enrichment promise rejection:",
+              promiseResult.reason,
+            );
+            result.errorDetails.push(
+              `Unexpected enrichment error: ${promiseResult.reason}`,
+            );
+          }
+        }
+
+        console.log(
+          `🎉 Parallel enrichment completed! ${result.enriched} succeeded, ${result.enrichmentErrors} failed`,
+        );
+      } else if (!this.enrichmentService) {
+        result.enrichmentSkipped = savedCompanies.length;
+        console.log(
+          `⏭️ Enrichment skipped for ${savedCompanies.length} companies (feature disabled)`,
+        );
       }
     } catch (error) {
       console.error("💥 CSV processing failed:", error);
@@ -178,6 +299,8 @@ export class UploadService {
       rows.push(row);
     }
 
+    // This returns an array of objects, each object is a row in the csv
+    // Each object has a key for each header, and the value is the value of the cell in the csv
     return rows;
   }
 
