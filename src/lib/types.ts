@@ -56,16 +56,28 @@ export interface CompanySignals {
   leadership_changes: string[];
 }
 
-export interface NewsSearchResult {
-  title: string;
-  snippet: string;
-  url: string;
-  date?: string;
-}
-
 export interface EnrichmentResult {
   signals: CompanySignals;
-  sources: NewsSearchResult[];
+  sources: string[];
   enriched_at: Date;
   confidence_score: number;
+}
+
+export interface NewsSearchResult {
+  status: string;
+  totalResults: number;
+  articles: NewsArticle[];
+}
+
+export interface NewsArticle {
+  source: {
+    name: string;
+  };
+  author: string;
+  title: string;
+  description: string;
+  url: string;
+  urlToImage: string;
+  publishedAt: string;
+  content: string;
 }

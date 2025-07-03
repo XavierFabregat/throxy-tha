@@ -4,10 +4,15 @@ import type {
   CompanySignals,
   NewsSearchResult,
   EnrichmentResult,
+  NewsArticle,
 } from "@/lib/types";
+import { type NewsService } from "./news/service";
 
 export class CompanyEnrichmentService {
-  constructor(private readonly aiModel: AIModelInterface) {}
+  constructor(
+    private readonly aiModel: AIModelInterface,
+    private readonly newsService: NewsService,
+  ) {}
 
   async enrichCompany(company: Company): Promise<EnrichmentResult> {
     try {
@@ -23,9 +28,16 @@ export class CompanyEnrichmentService {
         signals,
       );
 
+      console.log("🔍 Enrichment result:", {
+        signals,
+        sources: newsResults.map((article) => article.url),
+        enriched_at: new Date(),
+        confidence_score: confidenceScore,
+      });
+
       return {
         signals,
-        sources: newsResults,
+        sources: newsResults.map((article) => article.url),
         enriched_at: new Date(),
         confidence_score: confidenceScore,
       };
@@ -37,20 +49,20 @@ export class CompanyEnrichmentService {
     }
   }
 
-  private async searchCompanyNews(
-    companyName: string,
-  ): Promise<NewsSearchResult[]> {
-    // For demo purposes, we'll use mock data
-    // In production, you'd use Google Search API, Bing API, or similar
-    return this.getMockNewsData(companyName);
+  private async searchCompanyNews(companyName: string): Promise<NewsArticle[]> {
+    const newsResults = await this.newsService.search(companyName);
+    return newsResults.articles;
   }
 
   private async extractSignalsFromNews(
     company: Company,
-    newsResults: NewsSearchResult[],
+    newsResults: NewsArticle[],
   ): Promise<CompanySignals> {
     const newsContent = newsResults
-      .map((result) => `${result.title}: ${result.snippet}`)
+      .map(
+        (result) =>
+          `${result.title} (${result.publishedAt}): ${result.content}`,
+      )
       .join("\n\n");
 
     const prompt = `Analyze this recent news about ${company.name} and extract sales-relevant signals:
@@ -145,7 +157,7 @@ If no relevant signals found for a category, use an empty array.`;
   }
 
   private calculateConfidenceScore(
-    newsResults: NewsSearchResult[],
+    newsResults: NewsArticle[],
     signals: CompanySignals,
   ): number {
     let score = 0;
@@ -170,54 +182,112 @@ If no relevant signals found for a category, use an empty array.`;
     const mockNews: Record<string, NewsSearchResult[]> = {
       "Apple Inc.": [
         {
-          title: "Apple Announces New AI Features for iPhone",
-          snippet:
-            "Apple unveiled advanced AI capabilities including improved Siri and machine learning features across its device ecosystem.",
-          url: "https://example.com/apple-ai-features",
-          date: "2024-01-15",
-        },
-        {
-          title: "Apple Expands Manufacturing Operations",
-          snippet:
-            "The tech giant is hiring 2,000 engineers and expanding production facilities to meet growing demand.",
-          url: "https://example.com/apple-expansion",
-          date: "2024-01-10",
+          status: "ok",
+          totalResults: 1,
+          articles: [
+            {
+              title: "Apple Announces New AI Features for iPhone",
+              content:
+                "Apple unveiled advanced AI capabilities including improved Siri and machine learning features across its device ecosystem.",
+              url: "https://example.com/apple-ai-features",
+              publishedAt: "2024-01-15",
+              source: {
+                name: "Apple",
+              },
+              author: "John Doe",
+              description:
+                "Apple unveiled advanced AI capabilities including improved Siri and machine learning features across its device ecosystem.",
+              urlToImage: "https://example.com/apple-ai-features.jpg",
+            },
+          ],
         },
       ],
       Netflix: [
         {
-          title: "Netflix Invests $2B in Original Content",
-          snippet:
-            "Streaming giant announces major investment in original programming and new studio acquisitions.",
-          url: "https://example.com/netflix-investment",
-          date: "2024-01-20",
+          status: "ok",
+          totalResults: 1,
+          articles: [
+            {
+              title: "Netflix Invests $2B in Original Content",
+              content:
+                "Streaming giant announces major investment in original programming and new studio acquisitions.",
+              url: "https://example.com/netflix-investment",
+              publishedAt: "2024-01-20",
+              source: {
+                name: "Netflix",
+              },
+              author: "John Doe",
+              description:
+                "Streaming giant announces major investment in original programming and new studio acquisitions.",
+              urlToImage: "https://example.com/netflix-investment.jpg",
+            },
+          ],
         },
       ],
       Spotify: [
         {
-          title: "Spotify Launches AI Podcast Recommendations",
-          snippet:
-            "New machine learning algorithms help users discover personalized podcast content.",
-          url: "https://example.com/spotify-ai",
-          date: "2024-01-18",
+          status: "ok",
+          totalResults: 1,
+          articles: [
+            {
+              title: "Spotify Launches AI Podcast Recommendations",
+              content:
+                "New machine learning algorithms help users discover personalized podcast content.",
+              url: "https://example.com/spotify-ai",
+              publishedAt: "2024-01-18",
+              source: {
+                name: "Spotify",
+              },
+              author: "John Doe",
+              description:
+                "New machine learning algorithms help users discover personalized podcast content.",
+              urlToImage: "https://example.com/spotify-ai.jpg",
+            },
+          ],
         },
       ],
       Tesla: [
         {
-          title: "Tesla Opens New Gigafactory in Mexico",
-          snippet:
-            "Electric vehicle manufacturer expands global production capacity with new facility, hiring 3,000 workers.",
-          url: "https://example.com/tesla-mexico",
-          date: "2024-01-12",
+          status: "ok",
+          totalResults: 1,
+          articles: [
+            {
+              title: "Tesla Opens New Gigafactory in Mexico",
+              content:
+                "Electric vehicle manufacturer expands global production capacity with new facility, hiring 3,000 workers.",
+              url: "https://example.com/tesla-mexico",
+              publishedAt: "2024-01-12",
+              source: {
+                name: "Tesla",
+              },
+              author: "John Doe",
+              description:
+                "Electric vehicle manufacturer expands global production capacity with new facility, hiring 3,000 workers.",
+              urlToImage: "https://example.com/tesla-mexico.jpg",
+            },
+          ],
         },
       ],
       "Microsoft Corporation": [
         {
-          title: "Microsoft Acquires AI Startup for $1.2B",
-          snippet:
-            "Tech giant strengthens AI capabilities with strategic acquisition, integrating new technology into Office suite.",
-          url: "https://example.com/microsoft-ai-acquisition",
-          date: "2024-01-08",
+          status: "ok",
+          totalResults: 1,
+          articles: [
+            {
+              title: "Microsoft Acquires AI Startup for $1.2B",
+              content:
+                "Tech giant strengthens AI capabilities with strategic acquisition, integrating new technology into Office suite.",
+              url: "https://example.com/microsoft-ai-acquisition",
+              publishedAt: "2024-01-08",
+              source: {
+                name: "Microsoft",
+              },
+              author: "John Doe",
+              description:
+                "Tech giant strengthens AI capabilities with strategic acquisition, integrating new technology into Office suite.",
+              urlToImage: "https://example.com/microsoft-ai-acquisition.jpg",
+            },
+          ],
         },
       ],
     };
@@ -225,10 +295,22 @@ If no relevant signals found for a category, use an empty array.`;
     return (
       mockNews[companyName] ?? [
         {
-          title: `${companyName} Continues Growth Strategy`,
-          snippet: `${companyName} focuses on market expansion and technology improvements to drive business growth.`,
-          url: `https://example.com/${companyName.toLowerCase().replace(/\s+/g, "-")}-news`,
-          date: "2024-01-12",
+          status: "ok",
+          totalResults: 1,
+          articles: [
+            {
+              title: `${companyName} Continues Growth Strategy`,
+              content: `${companyName} focuses on market expansion and technology improvements to drive business growth.`,
+              url: `https://example.com/${companyName.toLowerCase().replace(/\s+/g, "-")}-news`,
+              publishedAt: "2024-01-12",
+              source: {
+                name: companyName,
+              },
+              author: "John Doe",
+              description: `${companyName} focuses on market expansion and technology improvements to drive business growth.`,
+              urlToImage: "https://example.com/microsoft-ai-acquisition.jpg",
+            },
+          ],
         },
       ]
     );

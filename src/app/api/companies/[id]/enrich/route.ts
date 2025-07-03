@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { updateCompanyEnrichment } from "@/server/db/company/mutations";
 import { CompanyEnrichmentService } from "@/lib/enrichment/service";
 import { AIModelFactory } from "@/lib/ai/providers/create-model";
+import { NewsService } from "@/lib/enrichment/news/service";
 
 export async function POST(
   request: NextRequest,
@@ -39,7 +40,11 @@ export async function POST(
     };
 
     const aiModel = AIModelFactory.createModel(modelConfig);
-    const enrichmentService = new CompanyEnrichmentService(aiModel);
+    const newsService = new NewsService();
+    const enrichmentService = new CompanyEnrichmentService(
+      aiModel,
+      newsService,
+    );
 
     // Perform enrichment
     console.log(`🔍 Starting enrichment for company: ${company.name}`);
