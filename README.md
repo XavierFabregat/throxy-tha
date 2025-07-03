@@ -29,8 +29,8 @@ This project takes basic company information (name, domain, country, employee si
 
 #### 2. Synchronous vs Asynchronous Enrichment
 
-**Decision**: Synchronous processing (for now)
-**Why**: MVP simplicity. Real production would need async processing.
+**Decision**: Moved to parallel synchronous enrichment for better performance
+**Why**: MVP simplicity. Real production would need async processing, with queues and more sophisticated logic.
 **Trade-off**: Simple implementation vs poor UX for large datasets
 
 ## Whys:
