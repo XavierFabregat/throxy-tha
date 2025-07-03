@@ -1,8 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { type Company } from "@/server/db/schema";
 import { EMPLOYEE_SIZE_BUCKETS } from "@/lib/types";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface CompaniesResponse {
   companies: Company[];
@@ -23,11 +31,18 @@ export default function HomePage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [uploadLoading, setUploadLoading] = useState(false);
+  const [name, setName] = useState("");
   const [filters, setFilters] = useState({
     country: "",
     employee_size: "",
     domain: "",
   });
+
+  const filteredCompanies = useMemo(() => {
+    return companies.filter((company) =>
+      company.name.toLowerCase().includes(name.toLowerCase()),
+    );
+  }, [companies, name]);
 
   const fetchCompanies = async () => {
     setLoading(true);
@@ -127,6 +142,16 @@ export default function HomePage() {
           }}
         >
           <div>
+            <label>Name:</label>
+            <input
+              type="text"
+              placeholder="Enter name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              style={{ width: "100%", padding: "5px", marginTop: "5px" }}
+            />
+          </div>
+          <div>
             <label>Country:</label>
             <input
               type="text"
@@ -182,99 +207,55 @@ export default function HomePage() {
         {loading ? (
           <p>Loading...</p>
         ) : (
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              border: "1px solid #ccc",
-            }}
-          >
-            <thead>
-              <tr style={{ backgroundColor: "#f5f5f5" }}>
-                <th
-                  style={{
-                    padding: "10px",
-                    textAlign: "left",
-                    border: "1px solid #ccc",
-                  }}
-                >
-                  ID
-                </th>
-                <th
-                  style={{
-                    padding: "10px",
-                    textAlign: "left",
-                    border: "1px solid #ccc",
-                  }}
-                >
-                  Name
-                </th>
-                <th
-                  style={{
-                    padding: "10px",
-                    textAlign: "left",
-                    border: "1px solid #ccc",
-                  }}
-                >
-                  Domain
-                </th>
-                <th
-                  style={{
-                    padding: "10px",
-                    textAlign: "left",
-                    border: "1px solid #ccc",
-                  }}
-                >
-                  Country
-                </th>
-                <th
-                  style={{
-                    padding: "10px",
-                    textAlign: "left",
-                    border: "1px solid #ccc",
-                  }}
-                >
-                  Employee Size
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {companies.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={4}
-                    style={{
-                      padding: "20px",
-                      textAlign: "center",
-                      border: "1px solid #ccc",
-                    }}
-                  >
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Domain</TableHead>
+                <TableHead>Country</TableHead>
+                <TableHead>Employee Size</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredCompanies.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-8 text-center">
                     No companies found
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
-                companies.map((company, index) => (
-                  <tr key={company.id}>
-                    <td style={{ padding: "10px", border: "1px solid #ccc" }}>
-                      {index + 1}
-                    </td>
-                    <td style={{ padding: "10px", border: "1px solid #ccc" }}>
+                filteredCompanies.map((company, index) => (
+                  <TableRow key={company.id}>
+                    <TableCell className="font-medium">{index + 1}</TableCell>
+                    <TableCell className="font-medium">
                       {company.name}
-                    </td>
-                    <td style={{ padding: "10px", border: "1px solid #ccc" }}>
-                      {company.domain ?? "-"}
-                    </td>
-                    <td style={{ padding: "10px", border: "1px solid #ccc" }}>
-                      {company.country}
-                    </td>
-                    <td style={{ padding: "10px", border: "1px solid #ccc" }}>
-                      {company.employee_size}
-                    </td>
-                  </tr>
+                    </TableCell>
+                    <TableCell>
+                      {company.domain ? (
+                        <a
+                          href={`https://${company.domain}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          {company.domain}
+                        </a>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>{company.country}</TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center rounded bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
+                        {company.employee_size}
+                      </span>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
       </div>
     </div>
