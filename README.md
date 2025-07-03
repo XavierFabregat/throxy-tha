@@ -1,7 +1,5 @@
 # Company Enrichment Service
 
-This project takes basic company information (name, domain, country, employee size) and enriches it with sales-relevant insights by analyzing recent news coverage. The goal is to help sales teams identify the right time to reach out to prospects by surfacing trigger events like funding rounds, leadership changes, or growth indicators.
-
 ## Design Decisions & Trade-offs
 
 ### Problem Breakdown
@@ -11,7 +9,7 @@ This project takes basic company information (name, domain, country, employee si
 **How I Structured This**:
 
 1. **Data Flow**: CSV -> Parse -> Clean + Enrich -> Store -> (*1)Display -> (?) Enrich -> Store -> Display(*1)
-2. **Core Challenge**: Transform unstructured news into structured usable data.
+2. **Core Challenge**: Transform unstructured company data into structured usable data.
 3. **Key Components**: Data ingestion, data cleaning, data enrichment, data dispaly.
 
 ### Major Design Decisions
@@ -19,18 +17,21 @@ This project takes basic company information (name, domain, country, employee si
 #### 1. AI-First vs Heuristic cleaning
 
 **Decision**: Use LLM (GPT-4) for data cleaning
+
 **Alternatives Considered**:
 
 - Heuristic rule base approach (❌too complicated, ❌difficult to scale, ✅deterministic)
 
-**Trade-offs**:
-✅ **Pros**: Handles context, adapts to language variations, no manual rule maintenance
+**Decision Trade-offs**:
+✅ **Pros**: AI handles context, adapts to language variations, no manual rule maintenance
 ❌ **Cons**: Higher cost (~$0.01-0.03 per company), slower processing, non-deterministic
 
 #### 2. Synchronous vs Asynchronous Enrichment
 
-**Decision**: Moved to parallel synchronous enrichment for better performance
+**Decision**: Moved to parallel synchronous enrichment for better performance.
+
 **Why**: MVP simplicity. Real production would need async processing, with queues and more sophisticated logic.
+
 **Trade-off**: Simple implementation vs poor UX for large datasets
 
 ## Whys:
@@ -41,7 +42,7 @@ I chose to use Large Language Models (GPT-4) for signal extraction instead of tr
 
 **Flexibility & Adaptability**: News articles come in countless formats and styles. Writing regex patterns or scrapers for every possible news site would be a nightmare to maintain. LLMs can understand context and meaning regardless of the specific formatting or writing style.
 
-**Semantic Understanding**: Not just looking for keywords - but understainding _what_ the news means for sales teams. An LLM can distinguish between "Company X hired a new janitor" (probably not sales-relevant) and "Company X hired a new CTO" (definitely worth knowing about).
+**Semantic Understanding**: Not just looking for keywords - but understainding what the news means for sales teams. An LLM can distinguish between "Company X hired a new janitor" (probably not sales-relevant) and "Company X hired a new CTO" (definitely worth knowing about).
 
 **Future-Proofing**: As news sites change their layouts or new sources emerge, our LLM-based approach continues working without code changes. Traditional scrapers would break constantly.
 
@@ -82,7 +83,6 @@ The trade-off is cost and dependency on a third-party service, but for a product
 - **Multi-step Reasoning**: Chain multiple AI calls to validate and cross-reference signals
 - **Confidence Scoring**: More sophisticated scoring that factors in source credibility and recency
 - **Signal Categorization**: Automatic tagging of signal urgency/importance for sales prioritization
-- **Testing**: Robust testing of key functionalities to make scaling and mantaining the code much easier.
 
 ### User Experience Improvements
 
@@ -96,46 +96,9 @@ The trade-off is cost and dependency on a third-party service, but for a product
 - **Background Processing**: Move enrichment to background workers with job queues
 - **Edge Caching**: CDN-level caching for frequently accessed companies
 
-## Testing Strategy
+### Testing
 
-### Unit Testing
-
-We'd focus on testing each service in isolation:
-
-```typescript
-// Example test structure
-describe("NewsService", () => {
-  it("should handle API errors gracefully");
-  it("should cache results properly");
-  it("should validate input parameters");
-});
-
-describe("CompanyEnrichmentService", () => {
-  it("should extract signals from mock news data");
-  it("should calculate confidence scores correctly");
-  it("should handle empty news results");
-});
-```
-
-### Integration Testing
-
-- **API Endpoint Testing**: Verify the enrichment flow end-to-end
-- **Database Operations**: Test company creation, updates, and queries
-- **Error Scenarios**: Network failures, malformed responses, rate limiting
-
-### E2E Testing
-
-- **Full User Workflows**: Upload CSV → enrich companies → view results
-- **Performance Testing**: Load testing with realistic data volumes
-- **Browser Testing**: Cross-browser compatibility for the UI
-
-### Testing Challenges & Solutions
-
-**API Mocking**: NewsAPI calls need to be mocked for consistent test results. I'd use MSW (Mock Service Worker) to intercept network requests.
-
-**LLM Testing**: AI responses are non-deterministic, so we'd test with fixed mock responses and validate the parsing logic separately from the AI calls.
-
-**Data Consistency**: Tests need predictable data states, so we'd use factory patterns for test data generation.
+- Important if we want faster development with more confidence (we don't need an absurdly high code coverage, just key functionalities that make up the core of our service so we know new features that we add are not breaking our product)
 
 ## Local Development
 
