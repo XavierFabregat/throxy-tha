@@ -53,22 +53,9 @@ export class CSVValidator {
         });
       }
 
-      // Business rule: Domain format validation (basic)
-      if (row.domain && !this.isValidDomain(row.domain)) {
-        errors.push({
-          rowIndex: i + 2,
-          data: row as Record<string, string>,
-          error: `Invalid domain format: ${row.domain}`,
-        });
-      }
+      // add other rules here as needed
     }
 
     return errors;
-  }
-
-  private isValidDomain(domain: string): boolean {
-    // Simple domain validation - could be more sophisticated -- regex grabbed online
-    const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]*\.[a-zA-Z]{2,}$/;
-    return domainRegex.test(domain.replace(/^https?:\/\//, ""));
   }
 }
