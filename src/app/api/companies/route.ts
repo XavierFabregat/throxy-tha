@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { CompanyFiltersSchema } from "@/lib/types";
 import { findWithFilters, countWithFilters } from "@/server/db/company/queries";
+import { deleteAllCompanies } from "../../../server/db/company/mutations";
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,4 +33,9 @@ export async function GET(request: NextRequest) {
       { status: 500 },
     );
   }
+}
+
+export async function DELETE(_request: NextRequest) {
+  await deleteAllCompanies();
+  return NextResponse.json({ message: "All companies deleted" });
 }

@@ -71,3 +71,10 @@ export async function updateCompanyEnrichment(
 
   return updated;
 }
+
+// for testing purposes
+export async function deleteAllCompanies() {
+  // valid overwrite sine its the behavior we want
+  // eslint-disable-next-line drizzle/enforce-delete-with-where
+  await db.delete(companies);
+}
