@@ -154,7 +154,7 @@ export class UploadService {
       }
 
       console.log(
-        `🧹 AI cleaning completed: ${cleanedCompanies.length} succeeded, ${cleaningErrors} failed`,
+        `ℹ️ AI cleaning completed: ${cleanedCompanies.length} succeeded, ${cleaningErrors} failed`,
       );
 
       if (cleanedCompanies.length === 0) {
@@ -214,7 +214,7 @@ export class UploadService {
       // PHASE 2: Parallel enrichment of saved companies (if enabled -- disable allowed for better api call control)
       if (this.enrichmentService && savedCompanies.length > 0) {
         console.log(
-          `🚀 Starting parallel enrichment for ${savedCompanies.length} companies...`,
+          `ℹ️ Starting parallel enrichment for ${savedCompanies.length} companies...`,
         );
 
         // DESIGN DECISION: Parallel enrichment for massive speed improvement
@@ -304,6 +304,7 @@ export class UploadService {
       );
     }
 
+    // Top level logging for the results
     console.log("📊 Final Results:", {
       processed: result.processed,
       inserted: result.inserted,
