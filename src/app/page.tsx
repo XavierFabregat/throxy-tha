@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { type Company } from "@/server/db/schema";
 import { EMPLOYEE_SIZE_BUCKETS } from "@/lib/types";
 import {
@@ -50,7 +50,7 @@ export default function HomePage() {
     );
   }, [companies, name]);
 
-  const fetchCompanies = async () => {
+  const fetchCompanies = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -70,11 +70,11 @@ export default function HomePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   useEffect(() => {
     void fetchCompanies();
-  }, [filters]);
+  }, [filters, fetchCompanies]);
 
   const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
