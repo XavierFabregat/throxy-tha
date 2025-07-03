@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Company } from "../server/db/schema";
 
 export const EMPLOYEE_SIZE_BUCKETS = [
   "1-10",
@@ -80,4 +81,9 @@ export interface NewsArticle {
   urlToImage: string;
   publishedAt: string;
   content: string;
+}
+
+export interface CompaniesResponse {
+  companies: Company[];
+  total: number;
 }
