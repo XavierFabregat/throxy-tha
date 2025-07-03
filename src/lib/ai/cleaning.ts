@@ -143,6 +143,10 @@ CLEANING & INFERENCE RULES:
    - If employee count is bigger than 10,000, map to "10,000+"
    - If employee count is smaller than 1, map to "1-10"
 
+5. **Fix Data**:
+    - If you are ABSOLUTELY SURE the data provided is incorrect, fix it
+    - If you are not sure, leave it as is
+
 EXAMPLES:
 Input: {"name": "Apple", "domain": "", "country": "", "employee_size": ""}
 Output: {"name": "Apple", "domain": "apple.com", "country": "United States", "employee_size": "10,000+"}
