@@ -9,10 +9,10 @@ import { NewsService } from "@/lib/enrichment/news/service";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const companyId = params.id;
+    const { id: companyId } = await params;
 
     if (!companyId) {
       return NextResponse.json(
