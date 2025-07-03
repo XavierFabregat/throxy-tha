@@ -156,6 +156,10 @@ If no relevant signals found for a category, use an empty array.`;
     };
   }
 
+  // DESIGN DECISION: Use heuristic-based confidence scoring
+  // Why: Simple to implement and understand, deterministic results
+  // Alternative considered: ML-based scoring (too complex for MVP)
+  // Trade-off: Accuracy vs simplicity
   private calculateConfidenceScore(
     newsResults: NewsArticle[],
     signals: CompanySignals,
