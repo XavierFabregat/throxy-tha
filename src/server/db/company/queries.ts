@@ -81,7 +81,7 @@ export async function getAllCountries(): Promise<string[]> {
     .from(companies)
     .orderBy(companies.country);
 
-  return result.map((r) => r.country);
+  return result.map((r) => r.country).filter((c) => c !== null);
 }
 
 export async function getAllEmployeeSizes(): Promise<string[]> {
