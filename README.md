@@ -148,5 +148,5 @@ describe("CompanyEnrichmentService", () => {
 
 ## Environment Variables
 
-- `NEWS_API_KEY`: Get from [NewsAPI.org](https://newsapi.org)
-- `OPENAI_API_KEY`: For the AI signal extraction
+- `NEWS_API_KEY`: For grabbing news relevant to companies. Get from [NewsAPI.org](https://newsapi.org)
+- `OPENAI_API_KEY`: For the AI signal extraction and data cleaning. Get from [opeani.com](https://openai.com)
