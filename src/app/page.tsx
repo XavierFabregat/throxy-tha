@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import EnrichDialog from "./_components/enrich-dialog";
 import { Dialog, DialogTrigger } from "../components/ui/dialog";
+import { Button } from "../components/ui/button";
 
 interface CompaniesResponse {
   companies: Company[];
@@ -141,44 +142,40 @@ export default function HomePage() {
   };
 
   return (
-    <>
-      <div style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto" }}>
-        <h1>Company Data Platform</h1>
+    <div className="flex h-full w-full flex-col gap-4">
+      <div className="flex h-full w-full flex-col gap-4">
+        <h1 className="text-2xl font-bold">Company Data Platform</h1>
+        <div className="flex w-full items-center justify-between gap-4 border-1 border-t border-b p-2">
+          <div className="flex flex-col gap-2">
+            <h2 className="text-lg font-bold">Upload CSV</h2>
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleUpload}
+              disabled={uploadLoading}
+              className="border-input w-full rounded-md border border-1 p-2"
+            />
+            {uploadLoading && <p>Processing...</p>}
+          </div>
 
-        {/* Upload Section */}
-        <div
-          style={{
-            marginBottom: "30px",
-            padding: "20px",
-            border: "1px solid #ccc",
-          }}
-        >
-          <h2>Upload CSV</h2>
-          <input
-            type="file"
-            accept=".csv"
-            onChange={handleUpload}
-            disabled={uploadLoading}
-          />
-          {uploadLoading && <p>Processing...</p>}
-        </div>
-
-        {/* Filters */}
-        <div
-          style={{
-            marginBottom: "30px",
-            padding: "20px",
-            border: "1px solid #ccc",
-          }}
-        >
-          <h2>Filters</h2>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: "15px",
+          <Button
+            variant="destructive"
+            onClick={() => {
+              void fetch("/api/companies", {
+                method: "DELETE",
+              }).then(() => {
+                alert("All companies deleted");
+                void fetchCompanies();
+              });
             }}
           >
+            Delete All Companies
+          </Button>
+        </div>
+
+        <div className="flex flex-col gap-2 border-1 border-t border-b p-2">
+          <h2>Filters</h2>
+          <div className="grid grid-cols-2 gap-2">
             <div>
               <label>Name:</label>
               <input
@@ -186,7 +183,7 @@ export default function HomePage() {
                 placeholder="Enter name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                style={{ width: "100%", padding: "5px", marginTop: "5px" }}
+                className="border-input w-full rounded-md border border-1 p-2"
               />
             </div>
             <div>
@@ -198,7 +195,7 @@ export default function HomePage() {
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, country: e.target.value }))
                 }
-                style={{ width: "100%", padding: "5px", marginTop: "5px" }}
+                className="border-input w-full rounded-md border border-1 p-2"
               />
             </div>
 
@@ -212,7 +209,7 @@ export default function HomePage() {
                     employee_size: e.target.value,
                   }))
                 }
-                style={{ width: "100%", padding: "5px", marginTop: "5px" }}
+                className="border-input w-full rounded-md border p-2"
               >
                 <option value="">All Sizes</option>
                 {EMPLOYEE_SIZE_BUCKETS.map((size) => (
@@ -232,13 +229,12 @@ export default function HomePage() {
                 onChange={(e) =>
                   setFilters((prev) => ({ ...prev, domain: e.target.value }))
                 }
-                style={{ width: "100%", padding: "5px", marginTop: "5px" }}
+                className="border-input w-full rounded-md border border-1 p-2"
               />
             </div>
           </div>
         </div>
 
-        {/* Results */}
         <div>
           <h2>Companies ({total} total)</h2>
 
@@ -294,7 +290,7 @@ export default function HomePage() {
                         {company.enrichment_data ? (
                           <Dialog>
                             <DialogTrigger asChild>
-                              <span className="inline-flex items-center rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+                              <span className="inline-flex cursor-pointer items-center rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
                                 Enriched
                               </span>
                             </DialogTrigger>
@@ -307,7 +303,7 @@ export default function HomePage() {
                           <button
                             onClick={() => handleEnrich(company.id)}
                             disabled={enrichingCompanies.has(company.id)}
-                            className="inline-flex items-center rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 hover:bg-blue-200 disabled:opacity-50"
+                            className="inline-flex cursor-pointer items-center rounded bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 hover:bg-blue-200 disabled:opacity-50"
                           >
                             {enrichingCompanies.has(company.id)
                               ? "Enriching..."
@@ -323,6 +319,6 @@ export default function HomePage() {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

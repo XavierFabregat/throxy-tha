@@ -19,7 +19,11 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${geist.variable}`}>
-      <body>{children}</body>
+      <body className="flex h-screen w-screen flex-col gap-4">
+        <div className="flex h-screen w-screen flex-col gap-4 px-50 py-5">
+          {children}
+        </div>
+      </body>
     </html>
   );
 }
