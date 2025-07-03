@@ -21,7 +21,7 @@ export const companies = createTable(
       .$defaultFn(() => crypto.randomUUID()),
     name: t.varchar({ length: 256 }).notNull(),
     domain: t.varchar({ length: 256 }), // nullable for missing domains since it can be blank -- we can fill data with AI calls
-    country: t.varchar({ length: 100 }).notNull(),
+    country: t.varchar({ length: 100 }),
     employee_size: t.varchar({ length: 50 }).notNull(),
     raw_json: t.jsonb().notNull(), // Store original CSV data for auditability and possible duplication handling
     created_at: t
