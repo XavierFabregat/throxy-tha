@@ -24,10 +24,17 @@ export async function upsertCompany(
   // Check if company exists by domain or name
   let existing = null;
 
+  // First check by domain since its a true unique identifier
+  // two companies can have the same name, but they can't have the same domain
+  // since domain can be null, we need to check if it exists first
   if (company.domain) {
     existing = await findByDomain(company.domain);
   }
 
+  // Only in the case there is no domain, (which would be rare in our approach)
+  // we check by name
+  // TODO: better apporach is to check by name/country combination since
+  // two companies can have the same name, but not in the same country
   if (!existing && company.name) {
     existing = await findByName(company.name);
   }
