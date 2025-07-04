@@ -21,13 +21,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      // 5MB limit
-      return NextResponse.json(
-        { error: "File too large (max 5MB)" },
-        { status: 400 },
-      );
-    }
+    // NOTE: possible check to control file size
+    // if (file.size > 5 * 1024 * 1024) {
+    //   // 5MB limit
+    //   return NextResponse.json(
+    //     { error: "File too large (max 5MB)" },
+    //     { status: 400 },
+    //   );
+    // }
 
     const modelConfig: AIModelConfig = {
       provider: "openai" as const,
