@@ -46,6 +46,7 @@ export class UploadService {
       enriched: 0,
       enrichmentErrors: 0,
       enrichmentSkipped: 0,
+      companies: [],
     };
 
     try {
@@ -199,6 +200,7 @@ export class UploadService {
           // Collect companies for potential enrichment
           if (company) {
             savedCompanies.push(company);
+            result.companies.push(company);
           }
         } catch (error) {
           result.errors++;

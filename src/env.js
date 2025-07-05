@@ -10,6 +10,9 @@ export const env = createEnv({
     DATABASE_URL: z.string().url(),
     OPENAI_API_KEY: z.string(),
     NEWS_API_KEY: z.string(),
+    REDIS_HOST: z.string().default("localhost"),
+    REDIS_PORT: z.string().default("6379"),
+    REDIS_PASSWORD: z.string().optional(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -33,7 +36,9 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     NEWS_API_KEY: process.env.NEWS_API_KEY,
-    // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
+    REDIS_HOST: process.env.REDIS_HOST,
+    REDIS_PORT: process.env.REDIS_PORT,
+    REDIS_PASSWORD: process.env.REDIS_PASSWORD,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

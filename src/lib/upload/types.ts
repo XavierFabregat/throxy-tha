@@ -1,3 +1,5 @@
+import type { Company } from "../../server/db/schema";
+
 export interface UploadResult {
   processed: number;
   inserted: number;
@@ -5,6 +7,7 @@ export interface UploadResult {
   errors: number;
   errorDetails: string[];
   totalCost?: number;
+  companies: Company[];
   // Enrichment tracking
   enriched: number;
   enrichmentErrors: number;

@@ -1,8 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { UploadService } from "@/lib/upload/service";
-import { AIModelFactory } from "@/lib/ai/providers/create-model";
-import type { AIModelConfig } from "@/lib/ai/types";
-import { NewsService } from "../../../lib/enrichment/news/service";
+import { csvProcessingQueue } from "@/lib/queue/queue";
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,39 +27,34 @@ export async function POST(request: NextRequest) {
     //   );
     // }
 
-    const modelConfig: AIModelConfig = {
-      provider: "openai" as const,
-      model: "gpt-4o-mini" as const,
-      temperature: 0.1,
-    };
+    const uploadId = crypto.randomUUID();
+    const csvContent = await file.text();
 
-    const aiModel = AIModelFactory.createModel(modelConfig);
-    const newsService = new NewsService();
-    const uploadService = new UploadService(
-      aiModel,
-      newsService,
-      enableEnrichment,
+    // Queue the CSV processing job
+    const job = await csvProcessingQueue.add(
+      `csv-processing-${uploadId}`,
+      {
+        csvData: csvContent,
+        enableEnrichment,
+        uploadId,
+        companies: [],
+      },
+      {
+        // Job options
+        priority: enableEnrichment ? 5 : 10, // Higher priority for enrichment
+      },
     );
 
-    console.log(`🚀 Starting CSV upload with enrichment: ${enableEnrichment}`);
-
-    const csvContent = await file.text();
-    const result = await uploadService.processCSV(csvContent);
-
-    return NextResponse.json(result);
+    return NextResponse.json({
+      jobId: job.id,
+      uploadId,
+      status: "queued",
+      message: "CSV processing started. Check status for updates.",
+    });
   } catch (error) {
     console.error("Upload error:", error);
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Upload failed",
-        processed: 0,
-        inserted: 0,
-        updated: 0,
-        errors: 1,
-        errorDetails: [
-          error instanceof Error ? error.message : "Unknown error",
-        ],
-      },
+      { error: error instanceof Error ? error.message : "Upload failed" },
       { status: 500 },
     );
   }

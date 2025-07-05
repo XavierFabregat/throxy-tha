@@ -17,16 +17,23 @@
     "lint:fix": "next lint --fix",
     "preview": "next build && next start",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "workers": "tsx -r dotenv/config src/scripts/start-workers.ts",
+    "dev:workers": "tsx watch -r dotenv/config src/scripts/start-workers.ts",
+    "dev:full": "concurrently \"npm run dev\" \"npm run dev:workers\""
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-slot": "^1.2.3",
     "@t3-oss/env-nextjs": "^0.12.0",
     "@tanstack/react-table": "^8.21.3",
+    "bullmq": "^5.56.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "concurrently": "^9.2.0",
+    "dotenv": "^17.0.1",
     "drizzle-orm": "^0.41.0",
+    "ioredis": "^5.6.1",
     "lucide-react": "^0.525.0",
     "next": "^15.2.3",
     "openai": "^5.8.2",
@@ -34,6 +41,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.3.1",
+    "tsx": "^4.20.3",
     "zod": "^3.24.2"
   },
   "devDependencies": {
